@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ab56000 — Supabase Dynamic Profile</title>
+  <meta name="description" content="ab56000 的個人作品集，透過 Supabase 資料庫動態載入並呈現所有 GitHub 儲存庫。">
+  <meta property="og:title" content="ab56000 — Supabase Dynamic Profile">
+  <meta property="og:description" content="探索 ab56000 的開源作品與技術棧 (Supabase 動態整合版)">
+  <meta property="og:url" content="https://ab56000.github.io/AgentCoding/index3.html">
+
+  <!-- Google Fonts: Space Grotesk + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       ui-ux-pro-max Design System (Supabase Dynamic Edition)
+       Style: Light Minimalist + Monochrome & Tech Blue + Bento Grid
+       Pattern: Swiss Modernist & Professional
+       Colors: Tech Blue #2563EB + Supabase Green #3CBA86 + Light Gray #FAFAFA
+       Typography: Space Grotesk (display) + JetBrains Mono (code)
+     ════════════════════════════════════════════════ */
+    :root {
+      --bg: #FAFAFA;
+      --bg-2: #F4F4F5;
+      --bg-3: #E4E4E7;
+      --cyan: #2563EB;
+      --violet: #4F46E5;
+      --emerald: #3CBA86;
+      /* Supabase Emerald Green */
+      --amber: #D97706;
+      --pink: #DB2777;
+      --text: #09090B;
+      --text-muted: #52525B;
+      --text-dim: #71717A;
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(9, 9, 11, 0.06);
+      --glass-hover: rgba(255, 255, 255, 0.95);
+      --glow-cyan: rgba(37, 99, 235, 0.06);
+      --glow-violet: rgba(79, 70, 229, 0.06);
+      --glow-emerald: rgba(60, 186, 134, 0.06);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --blur: 12px;
+      --transition: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── Swiss Grid Line Overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(9, 9, 11, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(9, 9, 11, 0.015) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* ── Subtle Light Ambient Orbs ── */
+    .orb-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.12;
+      animation: orb-float 18s ease-in-out infinite alternate;
+    }
+
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      top: -200px;
+      left: -150px;
+      background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
+      animation-duration: 20s;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      top: 30%;
+      right: -100px;
+      background: radial-gradient(circle, var(--emerald) 0%, transparent 70%);
+      animation-duration: 16s;
+      animation-delay: -8s;
+    }
+
+    .orb-3 {
+      width: 400px;
+      height: 400px;
+      bottom: -100px;
+      left: 30%;
+      background: radial-gradient(circle, var(--violet) 0%, transparent 70%);
+      animation-duration: 22s;
+      animation-delay: -4s;
+    }
+
+    @keyframes orb-float {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -40px) scale(1.05);
+      }
+
+      66% {
+        transform: translate(-20px, 20px) scale(0.97);
+      }
+
+      100% {
+        transform: translate(15px, -15px) scale(1.02);
+      }
+    }
+
+    /* ── Light Particles ── */
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    /* ── Container ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ══════════════════════════════════
+       NAVIGATION
+     ══════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 18px 0;
+      background: rgba(250, 250, 250, 0.6);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--glass-border);
+      transition: all 0.3s var(--transition);
+    }
+
+    nav.scrolled {
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo span {
+      background: linear-gradient(135deg, var(--cyan), var(--emerald));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px rgba(60, 186, 134, 0.3);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: 0.7;
+      }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      position: relative;
+      font-weight: 500;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 0;
+      height: 1.5px;
+      background: var(--cyan);
+      transition: width 0.3s var(--transition);
+    }
+
+    .nav-links a:hover {
+      color: var(--cyan);
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(60, 186, 134, 0.25);
+      background: rgba(60, 186, 134, 0.04);
+      color: var(--emerald) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.78rem !important;
+      transition: all 0.2s !important;
+      cursor: pointer;
+    }
+
+    .nav-cta:hover {
+      background: rgba(60, 186, 134, 0.08) !important;
+      box-shadow: 0 0 15px rgba(60, 186, 134, 0.15);
+    }
+
+    .nav-cta::after {
+      display: none !important;
+    }
+
+    /* ══════════════════════════════════
+       HERO SECTION
+     ══════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 140px 0 80px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 80px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--cyan);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fade-up 0.6s var(--transition) 0.2s forwards;
+      font-weight: 600;
+    }
+
+    .eyebrow-line {
+      width: 32px;
+      height: 1.5px;
+      background: var(--cyan);
+      opacity: 0.6;
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(25px);
+      animation: fade-up 0.7s var(--transition) 0.35s forwards;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--emerald) 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .typewriter-wrapper {
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      min-height: 2em;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fade-up 0.6s var(--transition) 0.5s forwards;
+    }
+
+    .typewriter-prompt {
+      color: var(--emerald);
+      margin-right: 8px;
+      user-select: none;
+      font-weight: bold;
+    }
+
+    .typewriter-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: var(--emerald);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.75;
+      max-width: 480px;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fade-up 0.6s var(--transition) 0.65s forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fade-up 0.6s var(--transition) 0.8s forwards;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--emerald));
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s var(--transition);
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.9rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.3s var(--transition);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-secondary:hover {
+      background: var(--glass-hover);
+      border-color: rgba(9, 9, 11, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ── Hero Avatar ── */
+    .hero-avatar-wrap {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+      animation: fade-scale 0.8s var(--transition) 0.4s forwards;
+    }
+
+    @keyframes fade-scale {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .avatar-ring {
+      position: relative;
+      width: 240px;
+      height: 240px;
+    }
+
+    .avatar-ring::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--cyan), var(--emerald), var(--cyan));
+      animation: spin 8s linear infinite;
+      filter: blur(1px);
+    }
+
+    .avatar-ring::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent, rgba(60, 186, 134, 0.1), transparent, rgba(37, 99, 235, 0.1), transparent);
+      animation: spin 12s linear infinite reverse;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .avatar-img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--bg);
+    }
+
+    .avatar-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 2;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(60, 186, 134, 0.08);
+      border: 1px solid rgba(60, 186, 134, 0.2);
+      backdrop-filter: blur(8px);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--emerald);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    @keyframes fade-up {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ══════════════════════════════════
+       STATS STRIP
+     ══════════════════════════════════ */
+    .stats-strip {
+      padding: 40px 0;
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    .stat-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 1px;
+      background: var(--glass-border);
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════
+       SECTION HEADERS
+     ══════════════════════════════════ */
+    .section {
+      padding: 100px 0;
+    }
+
+    .section-header {
+      margin-bottom: 60px;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--cyan);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+
+    .tag-bracket {
+      opacity: 0.4;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .section-title .accent {
+      color: var(--cyan);
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 540px;
+      margin-top: 12px;
+    }
+
+    /* Supabase Sync Badge */
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(60, 186, 134, 0.06);
+      border: 1px solid rgba(60, 186, 134, 0.2);
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--emerald);
+      font-weight: 600;
+      margin-bottom: 22px;
+    }
+
+    /* ══════════════════════════════════
+       SEARCH + FILTER BAR
+     ══════════════════════════════════ */
+    .filter-bar {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
+    }
+
+    .search-input:focus {
+      border-color: rgba(37, 99, 235, 0.3);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05);
+      background: #FFFFFF;
+    }
+
+    .search-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      letter-spacing: 0.03em;
+      font-weight: 500;
+    }
+
+    .chip:hover,
+    .chip.active {
+      border-color: rgba(37, 99, 235, 0.3);
+      color: var(--cyan);
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    /* ══════════════════════════════════
+       REPOSITORY BENTO GRID
+     ══════════════════════════════════ */
+    .repo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 18px;
+    }
+
+    .repo-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      cursor: pointer;
+      transition: all 0.35s var(--transition);
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      opacity: 0;
+      transform: translateY(30px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.015), 0 1px 3px rgba(0, 0, 0, 0.01);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+    }
+
+    .repo-card.visible {
+      animation: card-reveal 0.5s var(--transition) forwards;
+    }
+
+    @keyframes card-reveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .repo-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(60, 186, 134, 0.02) 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .repo-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .repo-card:hover::before {
+      opacity: 1;
+    }
+
+    .repo-card:hover {
+      border-color: rgba(60, 186, 134, 0.25);
+      box-shadow: 0 16px 36px rgba(60, 186, 134, 0.05),
+        0 0 0 1px rgba(60, 186, 134, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      background: #FFFFFF;
+    }
+
+    /* Green left indicator on hover */
+    .repo-card::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      border-radius: 2px 0 0 2px;
+      background: linear-gradient(180deg, transparent, var(--emerald), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .repo-card:hover::after {
+      opacity: 1;
+    }
+
+    .repo-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .repo-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.2rem;
+      background: var(--bg-2);
+      color: var(--emerald);
+    }
+
+    .repo-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .repo-fork-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(217, 119, 6, 0.08);
+      border: 1px solid rgba(217, 119, 6, 0.2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--amber);
+      flex-shrink: 0;
+      align-self: flex-start;
+      font-weight: 600;
+    }
+
+    .repo-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      flex: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .repo-desc.empty {
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 0.82rem;
+    }
+
+    .repo-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .repo-tag-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      background: var(--bg-2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .repo-footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .repo-lang {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .lang-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .repo-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .repo-stat svg {
+      opacity: 0.7;
+    }
+
+    .repo-updated {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+
+    .repo-external {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      background: rgba(60, 186, 134, 0.06);
+      border: 1px solid rgba(60, 186, 134, 0.12);
+      color: var(--emerald);
+    }
+
+    .repo-card:hover .repo-external {
+      opacity: 1;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 0;
+      color: var(--text-dim);
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+    }
+
+    /* ── Skeleton ── */
+    .repo-grid.loading .repo-card {
+      pointer-events: none;
+      opacity: 1 !important;
+      transform: none !important;
+      background: #FFFFFF;
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: -200% center;
+      }
+    }
+
+    /* ══════════════════════════════════
+       LANGUAGE CHART SECTION
+     ══════════════════════════════════ */
+    .langs-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .lang-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .lang-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lang-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lang-bar-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .lang-bar-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .lang-bar-track {
+      height: 5px;
+      background: var(--bg-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .lang-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      width: 0;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Donut chart */
+    .donut-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .donut-svg {
+      filter: drop-shadow(0 4px 12px rgba(60, 186, 134, 0.04));
+    }
+
+    .donut-center {
+      text-align: center;
+    }
+
+    .donut-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--emerald);
+    }
+
+    .donut-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════
+       FOOTER
+     ══════════════════════════════════ */
+    footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footer-brand span {
+      color: var(--emerald);
+      font-weight: 700;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 500;
+    }
+
+    .footer-links a:hover {
+      color: var(--emerald);
+    }
+
+    .footer-credit {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      opacity: 0.7;
+    }
+
+    /* ── Scroll Reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s var(--transition), transform 0.6s var(--transition);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 {
+      transition-delay: 0.1s;
+    }
+
+    .reveal-delay-2 {
+      transition-delay: 0.2s;
+    }
+
+    .reveal-delay-3 {
+      transition-delay: 0.3s;
+    }
+
+    /* ── Language Colors ── */
+    .lang-js {
+      background: #F7DF1E;
+    }
+
+    .lang-ts {
+      background: #3178C6;
+    }
+
+    .lang-py {
+      background: #3572A5;
+    }
+
+    .lang-php {
+      background: #4F5D95;
+    }
+
+    .lang-java {
+      background: #B07219;
+    }
+
+    .lang-c {
+      background: #555555;
+    }
+
+    .lang-cpp {
+      background: #F34B7D;
+    }
+
+    .lang-cs {
+      background: #178600;
+    }
+
+    .lang-go {
+      background: #00ADD8;
+    }
+
+    .lang-rust {
+      background: #DEA584;
+    }
+
+    .lang-swift {
+      background: #FA7343;
+    }
+
+    .lang-kotlin {
+      background: #A97BFF;
+    }
+
+    .lang-ruby {
+      background: #701516;
+    }
+
+    .lang-html {
+      background: #E34C26;
+    }
+
+    .lang-css {
+      background: #563D7C;
+    }
+
+    .lang-shell {
+      background: #89E051;
+    }
+
+    .lang-vue {
+      background: #41B883;
+    }
+
+    .lang-svelte {
+      background: #FF3E00;
+    }
+
+    .lang-dart {
+      background: #00B4AB;
+    }
+
+    .lang-other {
+      background: #8B949E;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        text-align: center;
+      }
+
+      .hero-avatar-wrap {
+        order: -1;
+        display: flex;
+        justify-content: center;
+      }
+
+      .avatar-ring {
+        width: 180px;
+        height: 180px;
+      }
+
+      .hero-desc {
+        margin: 0 auto 32px;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat-item:nth-child(2)::after {
+        display: none;
+      }
+
+      .langs-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .repo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Subtle Ambient Light Flow -->
+  <div class="orb-container">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Canvas Particles (Light Blue-gray) -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- ── NAVIGATION ── -->
+  <nav id="main-nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="nav-dot"></div>
+        <span>ab56000</span>.dev
+      </a>
+      <ul class="nav-links">
+        <li><a href="#repos">Repos</a></li>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="https://github.com/ab56000" target="_blank" rel="noopener" class="nav-cta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+              style="display:inline;vertical-align:middle">
+              <path
+                d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+            </svg>
+            GitHub
+          </a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-eyebrow">
+            <div class="eyebrow-line"></div>
+            Supabase Dynamic Profile
+            <div class="eyebrow-line"></div>
+          </div>
+          <h1 class="hero-title">
+            Hello, I'm<br>
+            <span class="gradient-text">ab56000</span>
+          </h1>
+          <div class="typewriter-wrapper">
+            <span class="typewriter-prompt">$&gt;</span>
+            <span id="typewriter-text"></span>
+            <span class="typewriter-cursor"></span>
+          </div>
+          <p class="hero-desc" id="hero-bio">
+            正在從 Supabase 動態庫讀取開發者自訂的履歷說明。探索我的儲存庫，一起建構更好的未來。
+          </p>
+          <div class="hero-actions">
+            <a href="#repos" class="btn-primary" id="btn-explore">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              探索儲存庫
+            </a>
+            <a href="https://github.com/ab56000" target="_blank" rel="noopener" class="btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+              </svg>
+              GitHub 主頁
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-avatar-wrap">
+          <div class="avatar-ring">
+            <img id="avatar-img" class="avatar-img" src="https://avatars.githubusercontent.com/ab56000"
+              alt="ab56000 avatar"
+              onerror="this.src='https://ui-avatars.com/api/?name=ab56000&background=FFFFFF&color=3CBA86&size=240'">
+            <div class="avatar-badge">
+              <div class="nav-dot" style="width:6px;height:6px;margin:0"></div>
+              Supabase Active
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATS STRIP ── -->
+  <div class="stats-strip reveal">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-repos">—</div>
+          <div class="stat-label">Repositories</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-stars">—</div>
+          <div class="stat-label">Total Stars</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-forks">—</div>
+          <div class="stat-label">Forks</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-followers">—</div>
+          <div class="stat-label">Followers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REPOSITORIES ── -->
+  <section id="repos" class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="sync-badge">
+          <span
+            style="width:6px;height:6px;background:#3CBA86;border-radius:50%;display:inline-block;box-shadow:0 0 6px #3CBA86;animation:pulse-dot 2s ease-in-out infinite"></span>
+          SUPABASE SYNCED
+        </div>
+        <h2 class="section-title">Featured <span class="accent">Repositories</span></h2>
+        <p class="section-desc">透過 Supabase 資料庫高速、動態讀取，完美過濾並探索我的所有開源作品。</p>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="filter-bar reveal reveal-delay-1">
+        <div class="search-wrap">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input type="text" id="search-input" class="search-input" placeholder="搜尋儲存庫名稱、描述或標籤...">
+        </div>
+        <div class="filter-chips" id="filter-chips">
+          <div class="chip active" data-lang="all">All</div>
+        </div>
+      </div>
+
+      <!-- Repo Grid -->
+      <div class="repo-grid loading" id="repo-grid">
+        <!-- Loading skeletons (rendered by JS by default) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LANGUAGES ── -->
+  <section id="languages" class="section langs-section reveal">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">
+          <span class="tag-bracket">&lt;</span>
+          Metrics
+          <span class="tag-bracket">/&gt;</span>
+        </div>
+        <h2 class="section-title">Language <span class="accent">Distribution</span></h2>
+        <p class="section-desc">分析所有儲存庫中，不同程式語言的編碼比例與分佈狀態。</p>
+      </div>
+
+      <div class="langs-layout">
+        <!-- Bars -->
+        <div class="lang-bars" id="lang-bars">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Donut Chart -->
+        <div class="donut-wrap">
+          <svg width="220" height="220" viewBox="0 0 220 220" class="donut-svg">
+            <circle cx="110" cy="110" r="85" fill="none" stroke="#F4F4F5" stroke-width="20" />
+            <g id="donut-segments"></g>
+            <foreignObject x="45" y="45" width="130" height="130">
+              <div
+                style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                <div class="donut-center">
+                  <div class="donut-value" id="donut-total">0</div>
+                  <div class="donut-label">Total Repos</div>
+                </div>
+              </div>
+            </foreignObject>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span>ab56000</span>.dev &copy; 2026. Built with ui-ux-pro-max.
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/ab56000" target="_blank" rel="noopener">
+          GitHub Profile
+        </a>
+      </div>
+      <div class="footer-credit">
+        Data dynamically synchronized via Supabase Database with Offline Fallback
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ═══════════════════════════════════════════════
+    // SUPABASE CONFIG & STATE
+    // ═══════════════════════════════════════════════
+    // [IMPORTANT] Replace these with your actual Supabase URL & Anon Key!
+    const SUPABASE_URL = "https://zgsqsnsnkppkbtcrhtel.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable__x52PBgZIzpkN7BXS5PCrA_H_9s8SUF";
+
+    const USER = "ab56000";
+    const FALLBACK_REPOS = [
+      {
+        name: "php-project",
+        description: "基於 PHP 打造的現代化後端應用程式，提供高效能的 API 介面與資料庫操作核心。",
+        stargazers_count: 5,
+        forks_count: 2,
+        language: "PHP",
+        topics: ["php", "rest-api", "backend"],
+        html_url: `https://github.com/${USER}/php-project`,
+        updated_at: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
+      },
+      {
+        name: "tetris-game",
+        description: "經典俄羅斯方塊遊戲的極致網頁移植版。採用純 JavaScript 與 Canvas 繪製，具備滑順的物理掉落與消除特效。",
+        stargazers_count: 8,
+        forks_count: 1,
+        language: "JavaScript",
+        topics: ["canvas", "game", "retro"],
+        html_url: `https://github.com/${USER}/tetris-game`,
+        updated_at: new Date(Date.now() - 3600000 * 24 * 7).toISOString()
+      }
+    ];
+
+    let state = {
+      repos: [],
+      filteredRepos: [],
+      searchTerm: "",
+      selectedLang: "all"
+    };
+
+    // ═══════════════════════════════════════════════
+    // SKELETON RENDERER
+    // ═══════════════════════════════════════════════
+    function renderSkeletons() {
+      const grid = document.getElementById('repo-grid');
+      grid.classList.add('loading');
+      let html = '';
+      for (let i = 0; i < 3; i++) {
+        html += `
+        <div class="repo-card">
+          <div class="repo-header">
+            <div class="repo-icon skeleton" style="width:42px;height:42px;"></div>
+            <div class="skeleton" style="width:120px;height:20px;"></div>
+          </div>
+          <div class="skeleton" style="width:100%;height:40px;margin-top:10px;"></div>
+          <div class="repo-footer" style="margin-top:auto;">
+            <div class="skeleton" style="width:60px;height:12px;"></div>
+            <div class="skeleton" style="width:40px;height:12px;"></div>
+          </div>
+        </div>
+      `;
+      }
+      grid.innerHTML = html;
+    }
+
+    // ═══════════════════════════════════════════════
+    // FETCH SUPABASE DATA
+    // ═══════════════════════════════════════════════
+    async function fetchSupabaseData() {
+      renderSkeletons();
+      try {
+        // 1. Fetch User Bio from GitHub (Optional & robust, will fallback gracefully)
+        fetch(`https://api.github.com/users/${USER}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.bio) {
+              document.getElementById('hero-bio').innerText = data.bio;
+            }
+            if (data.avatar_url) {
+              document.getElementById('avatar-img').src = data.avatar_url;
+            }
+            if (data.followers !== undefined) {
+              animateNumber('stat-followers', data.followers);
+            }
+          }).catch(() => {
+            animateNumber('stat-followers', 3); // Fallback follower count
+          });
+
+        // 2. Fetch Repositories from Supabase REST API (ordered by stars desc)
+        const selectUrl = `${SUPABASE_URL}/rest/v1/repositories?select=*&order=stargazers_count.desc`;
+        const response = await fetch(selectUrl, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+
+        if (!response.ok) throw new Error("Supabase API returned non-OK response");
+        const data = await response.json();
+
+        state.repos = data;
+        if (!state.repos || state.repos.length === 0) {
+          state.repos = FALLBACK_REPOS;
+        }
+      } catch (e) {
+        console.warn("Using Fallback Repositories due to Supabase Connection/Config Error", e);
+        state.repos = FALLBACK_REPOS;
+        if (document.getElementById('stat-followers').innerText === '—') {
+          animateNumber('stat-followers', 3);
+        }
+      }
+
+      // Process & Render
+      state.filteredRepos = [...state.repos];
+      renderStats();
+      buildFilterChips();
+      renderRepos();
+      renderCharts();
+    }
+
+    // ═══════════════════════════════════════════════
+    // STATS & COUNT ANIMATION
+    // ═══════════════════════════════════════════════
+    function renderStats() {
+      const totalRepos = state.repos.length;
+      const totalStars = state.repos.reduce((acc, r) => acc + (r.stargazers_count || 0), 0);
+      const totalForks = state.repos.reduce((acc, r) => acc + (r.forks_count || 0), 0);
+
+      animateNumber('stat-repos', totalRepos);
+      animateNumber('stat-stars', totalStars);
+      animateNumber('stat-forks', totalForks);
+      document.getElementById('donut-total').innerText = totalRepos;
+    }
+
+    function animateNumber(id, endValue) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (endValue === 0) { el.innerText = "0"; return; }
+      let start = 0;
+      const duration = 1200;
+      const stepTime = Math.abs(Math.floor(duration / endValue));
+
+      // Prevent ultra-fast steps for large numbers
+      const finalStep = Math.max(stepTime, 20);
+      const increment = Math.ceil(endValue / (duration / finalStep));
+
+      const timer = setInterval(() => {
+        start += increment;
+        if (start >= endValue) {
+          el.innerText = endValue;
+          clearInterval(timer);
+        } else {
+          el.innerText = start;
+        }
+      }, finalStep);
+    }
+
+    // ═══════════════════════════════════════════════
+    // CHIPS BUILDER
+    // ═══════════════════════════════════════════════
+    function buildFilterChips() {
+      const chipsContainer = document.getElementById('filter-chips');
+      // Keep only the "All" chip
+      chipsContainer.innerHTML = '<div class="chip active" data-lang="all">All</div>';
+
+      const langs = {};
+      state.repos.forEach(r => {
+        if (r.language) langs[r.language] = (langs[r.language] || 0) + 1;
+      });
+
+      Object.keys(langs).forEach(lang => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.setAttribute('data-lang', lang);
+        chip.innerText = lang;
+        chip.addEventListener('click', () => handleChipClick(lang, chip));
+        chipsContainer.appendChild(chip);
+      });
+
+      // Add click to "All" chip
+      chipsContainer.querySelector('[data-lang="all"]').addEventListener('click', function () {
+        handleChipClick('all', this);
+      });
+    }
+
+    function handleChipClick(lang, chipEl) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chipEl.classList.add('active');
+      state.selectedLang = lang;
+      filterAndRender();
+    }
+
+    // ═══════════════════════════════════════════════
+    // FILTER & RENDER
+    // ═══════════════════════════════════════════════
+    function filterAndRender() {
+      state.filteredRepos = state.repos.filter(repo => {
+        // Matches name, description or topics
+        const nameMatch = repo.name.toLowerCase().includes(state.searchTerm.toLowerCase());
+        const descMatch = repo.description && repo.description.toLowerCase().includes(state.searchTerm.toLowerCase());
+        const topicMatch = repo.topics && repo.topics.some(t => t.toLowerCase().includes(state.searchTerm.toLowerCase()));
+
+        const matchesSearch = nameMatch || descMatch || topicMatch;
+        const matchesLang = state.selectedLang === 'all' || repo.language === state.selectedLang;
+        return matchesSearch && matchesLang;
+      });
+      renderRepos();
+    }
+
+    function renderRepos() {
+      const grid = document.getElementById('repo-grid');
+      grid.classList.remove('loading');
+
+      if (state.filteredRepos.length === 0) {
+        grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-text">找不到符合搜尋條件的儲存庫。</div>
+        </div>
+      `;
+        return;
+      }
+
+      let html = '';
+      state.filteredRepos.forEach((repo, index) => {
+        const langClass = getLangClass(repo.language);
+        const formattedDate = new Date(repo.updated_at).toLocaleDateString('zh-TW', {
+          year: 'numeric', month: 'short', day: 'numeric'
+        });
+        const descHtml = repo.description
+          ? `<p class="repo-desc">${repo.description}</p>`
+          : `<p class="repo-desc empty">此專案暫無描述提供。</p>`;
+
+        // Render tags/topics
+        let tagsHtml = '';
+        if (repo.topics && repo.topics.length > 0) {
+          tagsHtml = '<div class="repo-tags">';
+          repo.topics.slice(0, 3).forEach(t => {
+            tagsHtml += `<span class="repo-tag-pill">#${t}</span>`;
+          });
+          tagsHtml += '</div>';
+        }
+
+        html += `
+        <a href="${repo.html_url}" target="_blank" rel="noopener" class="repo-card" style="animation-delay: ${index * 0.06}s">
+          <div class="repo-header">
+            <div class="repo-icon">📂</div>
+            <h3 class="repo-name" title="${repo.name}">${repo.name}</h3>
+            ${repo.fork ? '<span class="repo-fork-badge">Fork</span>' : ''}
+          </div>
+          ${descHtml}
+          ${tagsHtml}
+          <div class="repo-footer">
+            ${repo.language ? `
+              <div class="repo-lang">
+                <span class="lang-dot ${langClass}"></span>
+                ${repo.language}
+              </div>
+            ` : ''}
+            <div class="repo-stat">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              ${repo.stargazers_count || 0}
+            </div>
+            <div class="repo-stat">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+              ${repo.forks_count || 0}
+            </div>
+            <div class="repo-updated">${formattedDate}</div>
+          </div>
+          <div class="repo-external">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/>
+            </svg>
+          </div>
+        </a>
+      `;
+      });
+      grid.innerHTML = html;
+
+      // Trigger reveal class
+      setTimeout(() => {
+        document.querySelectorAll('.repo-card').forEach(card => card.classList.add('visible'));
+      }, 50);
+    }
+
+    function getLangClass(lang) {
+      if (!lang) return 'lang-other';
+      const mapping = {
+        'javascript': 'lang-js', 'typescript': 'lang-ts', 'python': 'lang-py',
+        'php': 'lang-php', 'java': 'lang-java', 'c': 'lang-c', 'c++': 'lang-cpp',
+        'c#': 'lang-cs', 'go': 'lang-go', 'rust': 'lang-rust', 'swift': 'lang-swift',
+        'kotlin': 'lang-kotlin', 'ruby': 'lang-ruby', 'html': 'lang-html',
+        'css': 'lang-css', 'shell': 'lang-shell', 'vue': 'lang-vue',
+        'svelte': 'lang-svelte', 'dart': 'lang-dart'
+      };
+      return mapping[lang.toLowerCase()] || 'lang-other';
+    }
+
+    // ═══════════════════════════════════════════════
+    // CHARTS RENDERER (SVG Donut)
+    // ═══════════════════════════════════════════════
+    function renderCharts() {
+      const langCounts = {};
+      let totalLangs = 0;
+
+      state.repos.forEach(r => {
+        if (r.language) {
+          langCounts[r.language] = (langCounts[r.language] || 0) + 1;
+          totalLangs++;
+        }
+      });
+
+      // Sort by count
+      const sortedLangs = Object.entries(langCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5); // top 5
+
+      // 1. Render Bars
+      const barsContainer = document.getElementById('lang-bars');
+      barsContainer.innerHTML = '';
+
+      sortedLangs.forEach(([lang, count]) => {
+        const pct = totalLangs > 0 ? Math.round((count / totalLangs) * 100) : 0;
+        const barItem = document.createElement('div');
+        barItem.className = 'lang-bar-item';
+
+        // Determine color
+        const dummySpan = document.createElement('span');
+        dummySpan.className = `lang-dot ${getLangClass(lang)}`;
+        document.body.appendChild(dummySpan);
+        const color = window.getComputedStyle(dummySpan).backgroundColor;
+        document.body.removeChild(dummySpan);
+
+        barItem.innerHTML = `
+        <div class="lang-bar-header">
+          <span class="lang-bar-name">${lang}</span>
+          <span class="lang-bar-pct">${count} Repos (${pct}%)</span>
+        </div>
+        <div class="lang-bar-track">
+          <div class="lang-bar-fill" style="width: 0%; background: ${color}"></div>
+        </div>
+      `;
+        barsContainer.appendChild(barItem);
+
+        // Trigger width fill anim
+        setTimeout(() => {
+          barItem.querySelector('.lang-bar-fill').style.width = `${pct}%`;
+        }, 100);
+      });
+
+      // 2. Render SVG Donut
+      const donutSegments = document.getElementById('donut-segments');
+      donutSegments.innerHTML = '';
+
+      let accumulatedPct = 0;
+      const r = 85;
+      const circumference = 2 * Math.PI * r;
+
+      sortedLangs.forEach(([lang, count]) => {
+        const pct = count / totalLangs;
+        const strokeDashArray = `${pct * circumference} ${circumference}`;
+        const strokeDashOffset = -accumulatedPct * circumference;
+
+        // Color extraction
+        const dummySpan = document.createElement('span');
+        dummySpan.className = `lang-dot ${getLangClass(lang)}`;
+        document.body.appendChild(dummySpan);
+        const color = window.getComputedStyle(dummySpan).backgroundColor;
+        document.body.removeChild(dummySpan);
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", "110");
+        circle.setAttribute("cy", "110");
+        circle.setAttribute("r", r.toString());
+        circle.setAttribute("fill", "none");
+        circle.setAttribute("stroke", color);
+        circle.setAttribute("stroke-width", "20");
+        circle.setAttribute("stroke-dasharray", strokeDashArray);
+        circle.setAttribute("stroke-dashoffset", strokeDashOffset.toString());
+        circle.setAttribute("transform", "rotate(-90 110 110)");
+        circle.style.transition = "stroke-dasharray 1s ease";
+
+        donutSegments.appendChild(circle);
+        accumulatedPct += pct;
+      });
+    }
+
+    // ═══════════════════════════════════════════════
+    // TYPEWRITER & INTERACTION
+    // ═══════════════════════════════════════════════
+    const strings = [
+      "Full-Stack Software Engineer",
+      "Supabase Power User",
+      "Open Source Contributor",
+      "Clean Code Enthusiast"
+    ];
+    let stringIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typewriterText = document.getElementById('typewriter-text');
+
+    function typewriter() {
+      const currentString = strings[stringIndex];
+      if (isDeleting) {
+        typewriterText.innerText = currentString.substring(0, charIndex - 1);
+        charIndex--;
+      } else {
+        typewriterText.innerText = currentString.substring(0, charIndex + 1);
+        charIndex++;
+      }
+
+      let delta = isDeleting ? 40 : 80;
+
+      if (!isDeleting && charIndex === currentString.length) {
+        delta = 2000; // Hold at the end of string
+        isDeleting = true;
+      } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        stringIndex = (stringIndex + 1) % strings.length;
+        delta = 400; // Pause before typing next word
+      }
+
+      setTimeout(typewriter, delta);
+    }
+
+    // ═══════════════════════════════════════════════
+    // PARTICLES (Light Canvas)
+    // ═══════════════════════════════════════════════
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+    const numberOfParticles = 45;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 1;
+        this.speedX = Math.random() * 0.3 - 0.15;
+        this.speedY = Math.random() * 0.3 - 0.15;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x > canvas.width) this.x = 0;
+        else if (this.x < 0) this.x = canvas.width;
+        if (this.y > canvas.height) this.y = 0;
+        else if (this.y < 0) this.y = canvas.height;
+      }
+      draw() {
+        ctx.fillStyle = 'rgba(60, 186, 134, 0.12)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particlesArray = [];
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+      }
+      connectParticles();
+      requestAnimationFrame(animateParticles);
+    }
+
+    function connectParticles() {
+      let opacityValue = 1;
+      for (let a = 0; a < particlesArray.length; a++) {
+        for (let b = a; b < particlesArray.length; b++) {
+          let dist = ((particlesArray[a].x - particlesArray[b].x) ** 2) +
+            ((particlesArray[a].y - particlesArray[b].y) ** 2);
+          if (dist < 15000) {
+            opacityValue = 1 - (dist / 15000);
+            ctx.strokeStyle = `rgba(60, 186, 134, ${opacityValue * 0.05})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════
+    // SCROLL REVEAL & INTERFACE EFFECTS
+    // ═══════════════════════════════════════════════
+    function scrollReveal() {
+      const reveals = document.querySelectorAll('.reveal');
+      reveals.forEach(el => {
+        const windowHeight = window.innerHeight;
+        const elementTop = el.getBoundingClientRect().top;
+        const elementVisible = 100;
+        if (elementTop < windowHeight - elementVisible) {
+          el.classList.add('visible');
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Fetch Supabase Data
+      fetchSupabaseData();
+
+      // 2. Typewriter
+      setTimeout(typewriter, 1000);
+
+      // 3. Particles
+      initParticles();
+      animateParticles();
+
+      // 4. Input Listener
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        state.searchTerm = e.target.value;
+        filterAndRender();
+      });
+
+      // 5. Scroll Listeners
+      window.addEventListener('scroll', () => {
+        scrollReveal();
+        const nav = document.getElementById('main-nav');
+        if (window.scrollY > 50) {
+          nav.classList.add('scrolled');
+        } else {
+          nav.classList.remove('scrolled');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+      });
+
+      // Trigger initial reveal check
+      setTimeout(scrollReveal, 200);
+    });
+  </script>
+</body>
+
+</html>
