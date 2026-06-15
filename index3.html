@@ -1507,7 +1507,7 @@
         </a>
       </div>
       <div class="footer-credit">
-        Data dynamically synchronized via Supabase Database with Offline Fallback
+        Data automatically synchronized via GitHub API with Supabase &amp; Offline Fallback
       </div>
     </div>
   </footer>
@@ -1617,49 +1617,82 @@
     }
 
     // ═══════════════════════════════════════════════
-    // FETCH SUPABASE DATA
+    // FETCH REPOSITORY DATA (GitHub API > Supabase > Fallback)
     // ═══════════════════════════════════════════════
     async function fetchSupabaseData() {
       renderSkeletons();
-      try {
-        // 1. Fetch User Bio from GitHub (Optional & robust, will fallback gracefully)
-        fetch(`https://api.github.com/users/${USER}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.bio) {
-              document.getElementById('hero-bio').innerText = data.bio;
-            }
-            if (data.avatar_url) {
-              document.getElementById('avatar-img').src = data.avatar_url;
-            }
-            if (data.followers !== undefined) {
-              animateNumber('stat-followers', data.followers);
-            }
-          }).catch(() => {
-            animateNumber('stat-followers', 3); // Fallback follower count
-          });
 
-        // 2. Fetch Repositories from Supabase REST API (ordered by stars desc)
-        const selectUrl = `${SUPABASE_URL}/rest/v1/repositories?select=*&order=stargazers_count.desc`;
-        const response = await fetch(selectUrl, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      // 1. Fetch User Bio from GitHub
+      fetch(`https://api.github.com/users/${USER}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.bio) {
+            document.getElementById('hero-bio').innerText = data.bio;
           }
+          if (data.avatar_url) {
+            document.getElementById('avatar-img').src = data.avatar_url;
+          }
+          if (data.followers !== undefined) {
+            animateNumber('stat-followers', data.followers);
+          }
+        }).catch(() => {
+          animateNumber('stat-followers', 3);
         });
 
-        if (!response.ok) throw new Error("Supabase API returned non-OK response");
-        const data = await response.json();
+      // 2. Fetch Repositories: GitHub API > Supabase > FALLBACK_REPOS
+      let reposLoaded = false;
 
-        state.repos = data;
-        if (!state.repos || state.repos.length === 0) {
-          state.repos = FALLBACK_REPOS;
+      // Strategy A: GitHub API (always up-to-date)
+      try {
+        const ghRes = await fetch(`https://api.github.com/users/${USER}/repos?sort=updated&per_page=100`);
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          if (ghData && ghData.length > 0) {
+            state.repos = ghData.map(r => ({
+              name: r.name,
+              description: r.description,
+              stargazers_count: r.stargazers_count || 0,
+              forks_count: r.forks_count || 0,
+              language: r.language,
+              topics: r.topics || [],
+              html_url: r.html_url,
+              updated_at: r.updated_at,
+              fork: r.fork || false
+            }));
+            reposLoaded = true;
+          }
         }
       } catch (e) {
-        console.warn("Using Fallback Repositories due to Supabase Connection/Config Error", e);
+        console.warn("GitHub API failed, trying Supabase...", e);
+      }
+
+      // Strategy B: Supabase REST API (backup)
+      if (!reposLoaded) {
+        try {
+          const selectUrl = `${SUPABASE_URL}/rest/v1/repositories?select=*&order=stargazers_count.desc`;
+          const response = await fetch(selectUrl, {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.length > 0) {
+              state.repos = data;
+              reposLoaded = true;
+            }
+          }
+        } catch (e) {
+          console.warn("Supabase also failed, using fallback...", e);
+        }
+      }
+
+      // Strategy C: FALLBACK_REPOS (offline backup)
+      if (!reposLoaded) {
         state.repos = FALLBACK_REPOS;
-        if (document.getElementById('stat-followers').innerText === '—') {
+        if (document.getElementById('stat-followers').innerText === '\u2014') {
           animateNumber('stat-followers', 3);
         }
       }
